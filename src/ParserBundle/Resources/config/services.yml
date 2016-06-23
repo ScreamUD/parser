@@ -1,0 +1,19 @@
+parameters:
+    entity: 'ParserBundle:Item'
+services:
+    mapping.converter:
+        class: Ddeboer\DataImport\ItemConverter\MappingItemConverter
+    doctrine.writer:
+        class: Ddeboer\DataImport\Writer\DoctrineWriter
+        arguments: ['@doctrine.orm.default_entity_manager', '%entity%']
+    factory.parser_factory:
+        class: ParserBundle\Factory\ParserFactory
+        arguments: ['@doctrine.writer', '@validator', '@mapping.converter', '@logger', '@doctrine.orm.default_entity_manager']
+    service.parser_service:
+        class: ParserBundle\Service\ParserService
+        arguments: ['@factory.parser_factory', '@doctrine.orm.default_entity_manager']
+    validation.subscriber:
+        class: ParserBundle\Subscriber\ValidationSubscriber
+        arguments: ['@validator', '@logger']
+        tags:
+            - { name: doctrine.event_subscriber, connection: default }
