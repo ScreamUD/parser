@@ -3,6 +3,7 @@
 namespace ParserBundle\Command;
 
 use Ddeboer\DataImport\Exception\ValidationException;
+use Ddeboer\DataImport\Exception\WriterException;
 use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
 use Symfony\Component\Console\Formatter\OutputFormatterStyle;
 use Symfony\Component\Console\Input\InputArgument;
@@ -26,18 +27,28 @@ class ParserCommand extends ContainerAwareCommand
                 'file',
                 InputArgument::REQUIRED,
                 'Type a path to file'
-            )
-            ->addOption(
+            )->addOption(
                 'test',
                 null,
                 InputOption::VALUE_NONE,
                 'Use to run test mode'
-            )
-            ->addOption(
+            )->addOption(
                 'clear-table',
                 null,
                 InputOption::VALUE_NONE,
                 'Use it to clear all the data from your table'
+            )->addOption(
+                'cost',
+                null,
+                InputOption::VALUE_OPTIONAL,
+                '',
+                5
+            )->addOption(
+                'stock',
+                null,
+                InputOption::VALUE_OPTIONAL,
+                '',
+                10
             );
     }
 
@@ -71,17 +82,21 @@ class ParserCommand extends ContainerAwareCommand
             $output->writeln('<begin-output>['. $dateStart->format('Y-m-d h:m:s') .'] parser.NOTICE:</> <options=bold>Clear mode is activated</>');
         }
 
-        $result = $parserService->parse($file, $testOption);
+        $restrictions = array(
+            'cost' => $input->getOption('cost'),
+            'stock' => $input->getOption('stock'),
+        );
+        
+        $result = $parserService->parse($file, $restrictions, $testOption);
 
         $errors = $result->getExceptions();
-        $dateEnd = $result->getEndTime()->format('Y-m-d h:m:s');
-        $parseErrors = $parserService->getParseErrors();
-        $countErrors = $result->getErrorCount() + count($parseErrors);
+        $dateEnd = $result->getEndTime();
+        $parseErrors = $result->getErrors();
+        $countErrors = $result->getCountErrors();
 
-        if(!empty($parseErrors)) {
+        if (!empty($parseErrors)) {
             $output->writeln('<error>[' . $dateStart->format('Y-m-d h:m:s') . '] parser.ERROR:</error> Parse errors - lines ' . implode(', ', $parseErrors));
         }
-
         foreach ($errors as $error) {
             if ($error instanceof ValidationException) {
                 $violations = $error->getViolations();
@@ -100,7 +115,7 @@ class ParserCommand extends ContainerAwareCommand
 
         $output->writeln('<info>[' . $dateEnd . '] parser.INFO:</info> Successful items - <fg=green;options=bold>' . $result->getSuccessCount() . '</>, failture items - <fg=red;options=bold>' . $countErrors . '</>');
 
-        if($result->getSuccessCount() > 0) {
+        if ($result->getSuccessCount() > 0) {
             $output->writeln('<success-output>[' . $dateEnd . '] parser.SUCCESS:</> <options=bold>Congratulations, your data has been imported</>');
         }
     }

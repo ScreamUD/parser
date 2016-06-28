@@ -45,19 +45,19 @@ class Item implements ModelInterface
     protected $strProductCode;
 
     /**
-     * @var DateTime
+     * @var \DateTime
      * @ORM\Column(name="dtmAdded", type="datetime", nullable=true)
      */
     protected $dtmAdded;
 
     /**
-     * @var DateTime
+     * @var \DateTime
      * @ORM\Column(name="dtmDiscontinued", type="datetime", nullable=true)
      */
     protected $dtmDiscontinued;
 
     /**
-     * @var DateTime
+     * @var \DateTime
      * @ORM\Column(name="stmTimestamp", type="datetime")
      */
     protected $stmTimestamp;
