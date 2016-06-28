@@ -22,9 +22,6 @@ use Ddeboer\DataImport\Exception\WriterException;
  */
 class ParserFactory implements ParserFactoryInterface
 {
-    const ITEM_MIN_COST = 5;
-    const ITEM_MIN_STOCK = 10;
-
     /**
      * filter for unique data
      *
@@ -100,18 +97,18 @@ class ParserFactory implements ParserFactoryInterface
      * get parser via file extension format
      *
      * @param string $file
-     * @param string $format
+     * @param string $type
      * @param bool $testOption
      * @return StepAggregator
      * @throws \Exception
      */
-    public function getParser($file, $format, $testOption = false)
+    public function getParser($type, $file, $testOption = false)
     {
         $instance = null;
 
-        switch ($format) {
-            case 'csv':
-                $instance = $this->csvParser($file, $testOption);
+        switch ($type) {
+            case self::TYPE_CSV:
+                $instance = $this->createCsvParser($file, $testOption);
                 break;
             default:
                 throw new \Exception('Format not found');
@@ -163,85 +160,9 @@ class ParserFactory implements ParserFactoryInterface
         return $workflow;
     }
 
-    /**
-     * converts default headers from file to database field names
-     *
-     * @return MappingStep
-     */
-    public function getConverter()
-    {
-        return $this->converter
-            ->map('[Product Code]', '[strProductCode]')
-            ->map('[Product Name]', '[strProductName]')
-            ->map('[Product Description]', '[strProductDesc]')
-            ->map('[Stock]', '[intStock]')
-            ->map('[Cost in GBP]', '[fltCost]')
-            ->map('[Discontinued]', '[dtmDiscontinued]');
-    }
 
-    /**
-     * @return ValidatorFilter
-     */
-    protected function getValidationFilter()
-    {
-        $validatorFilter = new ValidatorFilter($this->validator);
 
-        $arrayOfConstraints = $this->helper->getConstraint(new Item());
-        foreach ($arrayOfConstraints as $value) {
-            $validatorFilter->add($value['field'], $value['constraint']);
-        }
 
-        $validatorFilter->throwExceptions();
-        $validatorFilter->setStrict(false);
-
-        return $validatorFilter;
-    }
-
-    /**
-     * @return callable
-     */
-    protected function getCallbackUniqueFilter()
-    {
-        $callbackFilter = function ($data)
-        {
-            if(!isset($data['strProductCode'])) {
-                throw new \Exception('Data is invalid');
-            }
-
-            if (isset($this->filter[$data['strProductCode']])) {
-                $message = sprintf('Duplication product code - %s', $data['strProductCode']);
-                throw new WriterException($message);
-            } else {
-                $this->filter[$data['strProductCode']] = true;
-                $result = true;
-            }
-
-            return $result;
-        };
-
-        return $callbackFilter;
-    }
-
-    /**
-     * @return callable
-     */
-    protected function getCallbackConditionsFilter()
-    {
-        $callbackFilter = function ($data)
-        {
-            if ($data['fltCost'] < self::ITEM_MIN_COST && $data['intStock'] < self::ITEM_MIN_STOCK) {
-                $message = sprintf('Item cost less than 5 and product stock less than 10 - %s', $data['strProductCode']);
-                throw new WriterException($message);
-            } else {
-                $this->filter[$data['strProductCode']] = true;
-                $result = true;
-            }
-
-            return $result;
-        };
-
-        return $callbackFilter;
-    }
 
     /**
      * @param string $file
@@ -249,7 +170,7 @@ class ParserFactory implements ParserFactoryInterface
      * @return StepAggregator
      * @throws \Exception
      */
-    protected function csvParser($file, $testOption = false)
+    protected function createCsvParser($file, $testOption = false)
     {
         try {
             $file = new \SplFileObject($file);

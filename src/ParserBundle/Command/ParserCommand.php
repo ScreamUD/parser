@@ -3,6 +3,7 @@
 namespace ParserBundle\Command;
 
 use Ddeboer\DataImport\Exception\ValidationException;
+use Ddeboer\DataImport\Exception\WriterException;
 use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
 use Symfony\Component\Console\Formatter\OutputFormatterStyle;
 use Symfony\Component\Console\Input\InputArgument;
@@ -72,6 +73,28 @@ class ParserCommand extends ContainerAwareCommand
         }
 
         $result = $parserService->parse($file, $testOption);
+
+
+        $filter = array();
+        $this->setFilter(array(
+            function ($data) {
+                return $data['fltCost'] >= 5;
+            },
+            function ($data) {
+                return $data['intStock'] >= 10;
+            },
+            function ($data) use ($filter) {
+                if (isset($filter[$data['strProductCode']])) {
+                    $message = sprintf('Duplication product code - %s', $data['strProductCode']);
+                    throw new WriterException($message);
+                } else {
+                    $filter[$data['strProductCode']] = true;
+                    $result = true;
+                }
+
+                return $result;
+            }
+        ));
 
         $errors = $result->getExceptions();
         $dateEnd = $result->getEndTime()->format('Y-m-d h:m:s');
