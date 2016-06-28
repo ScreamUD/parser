@@ -11,7 +11,7 @@ use ParserBundle\Model\ModelInterface;
 interface ConstraintInterface
 {
     /**
-     * data for correct validation from entity asserts
+     * gets constraints from entity asserts
      *
      * @param ModelInterface $entity
      * @return array

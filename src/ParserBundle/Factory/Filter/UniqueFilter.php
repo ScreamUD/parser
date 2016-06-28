@@ -4,8 +4,17 @@ namespace ParserBundle\Factory\Filter;
 
 use Ddeboer\DataImport\Exception\WriterException;
 
+/**
+ * Class UniqueFilter
+ * @package ParserBundle\Factory\Filter
+ */
 class UniqueFilter extends Filter
 {
+    /**
+     * checks for duplications
+     *
+     * @return \Closure
+     */
     public function getCallable()
     {
         return function ($data) {

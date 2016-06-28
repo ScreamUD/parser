@@ -2,10 +2,14 @@
 
 namespace ParserBundle\Factory\Filter;
 
+/**
+ * Interface FilterInterface
+ * @package ParserBundle\Factory\Filter
+ */
 interface FilterInterface
 {
     /**
-     * @return \Closure|Object
+     * @return \Closure
      */
     public function getCallable();
 }

@@ -8,5 +8,4 @@ namespace ParserBundle\Model;
  */
 interface ModelInterface
 {
-
 }

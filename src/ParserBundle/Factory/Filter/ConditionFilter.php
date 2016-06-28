@@ -4,6 +4,10 @@ namespace ParserBundle\Factory\Filter;
 
 use Ddeboer\DataImport\Exception\WriterException;
 
+/**
+ * Class ConditionFilter
+ * @package ParserBundle\Factory\Filter
+ */
 class ConditionFilter extends Filter
 {
     /**
@@ -29,6 +33,8 @@ class ConditionFilter extends Filter
     }
 
     /**
+     * checks for stock and cost
+     *
      * @return \Closure
      */
     public function getCallable()
@@ -48,6 +54,10 @@ class ConditionFilter extends Filter
         };
     }
 
+    /**
+     * @param array $data
+     * @return bool
+     */
     public function isValid($data)
     {
         $callback = $this->conditionCallback;

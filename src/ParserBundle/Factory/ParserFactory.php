@@ -8,8 +8,6 @@ use Ddeboer\DataImport\Writer\DoctrineWriter;
 use ParserBundle\Exception\Exception;
 use ParserBundle\Helper\ConstraintInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
-use Psr\Log\LoggerInterface;
-use Doctrine\ORM\EntityManager;
 
 /**
  * Class ParserFactory
@@ -85,7 +83,7 @@ class ParserFactory
     }
 
     /**
-     * @param \ParserBundle\Factory\Parser $parser
+     * @param Parser $parser
      * @return $this
      */
     protected function setDepends(Parser $parser)
@@ -93,14 +91,13 @@ class ParserFactory
         $parser->setWriter($this->writer);
         $parser->setConstraintHelper($this->helper);
         $parser->setValidator($this->validator);
-
         $parser->setConverter($this->converter);
 
         return $this;
     }
 
     /**
-     * @param \ParserBundle\Factory\Parser $parser
+     * @param Parser $parser
      * @param array $restrictions
      * @return $this
      */

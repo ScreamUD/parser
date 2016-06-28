@@ -7,6 +7,10 @@ use Doctrine\ORM\EntityManager;
 use ParserBundle\Repository\ItemRepository;
 use ParserBundle\Parser\Result;
 
+/**
+ * Class ParserService
+ * @package ParserBundle\Service
+ */
 class ParserService
 {
     /**
@@ -58,7 +62,7 @@ class ParserService
     }
 
     /**
-     * Clear all data from table by repository Item
+     * Clear all data from table
      */
     public function clearItemTable()
     {

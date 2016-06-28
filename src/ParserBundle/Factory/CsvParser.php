@@ -8,10 +8,15 @@ use Ddeboer\DataImport\Step\MappingStep;
 use Ddeboer\DataImport\Workflow\StepAggregator;
 use ParserBundle\Entity\Item;
 
+/**
+ * Class CsvParser
+ * @package ParserBundle\Factory
+ */
 class CsvParser extends Parser
 {
     /**
-     * {@inheritdoc}
+     * @param string $file
+     * @return Reader\CsvReader
      */
     public function getReader($file)
     {
@@ -23,7 +28,8 @@ class CsvParser extends Parser
     }
 
     /**
-     * {@inheritdoc}
+     * @param MappingStep $converter
+     * @return $this
      */
     public function setConverter(MappingStep $converter)
     {
@@ -39,9 +45,10 @@ class CsvParser extends Parser
     }
 
     /**
-     * {@inheritdoc}
+     * @param Reader $reader
+     * @return StepAggregator
      */
-    public function getWorkflow($reader)
+    public function getWorkflow(Reader $reader)
     {
         $workflow = new StepAggregator($reader);
 

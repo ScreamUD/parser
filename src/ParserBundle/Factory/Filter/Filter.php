@@ -4,6 +4,10 @@ namespace ParserBundle\Factory\Filter;
 
 use ParserBundle\Exception\Exception;
 
+/**
+ * Abstract class Filter
+ * @package ParserBundle\Factory\Filter
+ */
 abstract class Filter implements FilterInterface
 {
     /**

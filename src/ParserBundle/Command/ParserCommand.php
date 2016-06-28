@@ -82,10 +82,10 @@ class ParserCommand extends ContainerAwareCommand
             $output->writeln('<begin-output>['. $dateStart->format('Y-m-d h:m:s') .'] parser.NOTICE:</> <options=bold>Clear mode is activated</>');
         }
 
-        $restrictions = array(
+        $restrictions = [
             'cost' => $input->getOption('cost'),
             'stock' => $input->getOption('stock'),
-        );
+        ];
         
         $result = $parserService->parse($file, $restrictions, $testOption);
 
@@ -97,6 +97,7 @@ class ParserCommand extends ContainerAwareCommand
         if (!empty($parseErrors)) {
             $output->writeln('<error>[' . $dateStart->format('Y-m-d h:m:s') . '] parser.ERROR:</error> Parse errors - lines ' . implode(', ', $parseErrors));
         }
+
         foreach ($errors as $error) {
             if ($error instanceof ValidationException) {
                 $violations = $error->getViolations();

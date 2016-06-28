@@ -43,27 +43,11 @@ abstract class Parser implements ParserInterface
     protected $stock;
 
     /**
-     * @return DoctrineWriter
-     */
-    public function getWriter()
-    {
-        return $this->writer;
-    }
-
-    /**
      * @param DoctrineWriter $writer
      */
     public function setWriter(DoctrineWriter $writer)
     {
         $this->writer = $writer;
-    }
-
-    /**
-     * @return boolean
-     */
-    public function isTestOption()
-    {
-        return $this->testOption;
     }
 
     /**
@@ -187,6 +171,10 @@ abstract class Parser implements ParserInterface
         return $result;
     }
 
-    abstract protected function getWorkflow($reader);
+    /**
+     * @param Reader $reader
+     * @return mixed
+     */
+    abstract protected function getWorkflow(Reader $reader);
     abstract protected function getReader($file);
 }

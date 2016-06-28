@@ -6,6 +6,10 @@ use \Ddeboer\DataImport\Filter\ValidatorFilter as DdeboerValidatorFilter;
 use ParserBundle\Helper\ConstraintInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
+/**
+ * Class ValidatorFilter
+ * @package ParserBundle\Factory\Filter
+ */
 class ValidatorFilter implements FilterInterface
 {
     /**
@@ -34,6 +38,11 @@ class ValidatorFilter implements FilterInterface
         $this->entityClassName = $entityClassName;
     }
 
+    /**
+     * checks for Doctrine Asserts
+     *
+     * @return DdeboerValidatorFilter
+     */
     public function getCallable()
     {
         $validatorFilter = new DdeboerValidatorFilter($this->validator);

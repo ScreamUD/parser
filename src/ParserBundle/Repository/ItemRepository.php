@@ -11,8 +11,6 @@ use Doctrine\ORM\EntityRepository;
 class ItemRepository extends EntityRepository
 {
     /**
-     * Clear all data from table
-     *
      * @return array
      */
     public function clearTable()

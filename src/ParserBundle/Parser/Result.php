@@ -2,6 +2,10 @@
 
 namespace ParserBundle\Parser;
 
+/**
+ * Class Result
+ * @package ParserBundle\Parser
+ */
 class Result
 {
     /**
