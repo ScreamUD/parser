@@ -3,6 +3,7 @@
 namespace ParserBundle\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
+use ParserBundle\Model\ModelInterface;
 use Symfony\Component\Validator\Constraints\DateTime;
 use Symfony\Component\Validator\Constraints as Assert;
 
@@ -12,9 +13,8 @@ use Symfony\Component\Validator\Constraints as Assert;
  * @ORM\HasLifecycleCallbacks()
  * @ORM\Table(name="tblProductData", indexes={@ORM\Index(name="strProductCodeIndex", columns={"strProductCode"})})
  */
-class Item
+class Item implements ModelInterface
 {
-
     /**
      * @var int
      * @ORM\Column(name="intProductDataId", type="integer", options={"unsigned"=true})
@@ -74,6 +74,12 @@ class Item
      * @var float
      * @Assert\Type(type="numeric", message="Property cost should be of type numeric")
      * @Assert\NotBlank(message="Property cost is blank")
+     * @Assert\Range(
+     *      min = 0,
+     *      max = 1000,
+     *      minMessage = "Item cost must be at least {{ limit }}",
+     *      maxMessage = "Item cost cannot be taller than {{ limit }}"
+     * )
      * @ORM\Column(name="fltCost", type="float", options={"unsigned"=true})
      */
     protected $fltCost;
@@ -151,7 +157,7 @@ class Item
     }
 
     /**
-     * condition for set date only if discontinued equal yes
+     * set date only if discontinued equal yes
      *
      * @param $discontinued
      */
@@ -196,28 +202,5 @@ class Item
         $this->fltCost = $fltCost;
 
         return $this;
-    }
-
-    /**
-     * condition for product cost less than 5
-     * and product stock less than 10
-     *
-     * @Assert\IsFalse(message="Product cost less than 5 and product stock less than 10")
-     * @return bool
-     */
-    public function isProductLessCostAndStock()
-    {
-        return ($this->fltCost < 5 && $this->intStock < 10);
-    }
-
-    /**
-     * condition for product cost over than 1000
-     *
-     * @Assert\IsFalse(message="Product cost over than 1000")
-     * @return bool
-     */
-    public function isProductOverCost()
-    {
-        return ($this->fltCost > 1000);
     }
 }

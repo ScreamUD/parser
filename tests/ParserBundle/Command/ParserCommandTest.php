@@ -13,9 +13,6 @@ class ParserCommandTest extends KernelTestCase
     public $filename;
     private $application;
 
-    /**
-     * Test of existing file and correct
-     */
     public function testExecute()
     {
         $command = $this->application->find('parser:command');
@@ -32,10 +29,6 @@ class ParserCommandTest extends KernelTestCase
         $this->assertRegExp('/SUCCESS/', $commandTester->getDisplay());
     }
 
-
-    /**
-     * Test with mode clear-table
-     */
     public function testClearTable()
     {
         $command = $this->application->find('parser:command');
@@ -53,8 +46,6 @@ class ParserCommandTest extends KernelTestCase
     }
 
     /**
-     * throw exception of not existing file
-     *
      * @expectedException \Exception
      */
     public function testExistenceFile()
@@ -70,8 +61,6 @@ class ParserCommandTest extends KernelTestCase
     }
 
     /**
-     * throw exception of invalid file format extension
-     *
      * @expectedException \Exception
      */
     public function testInvalidFormatExtension()
@@ -86,9 +75,6 @@ class ParserCommandTest extends KernelTestCase
         ]);
     }
 
-    /**
-     * test file with parse errors
-     */
     public function testWithParseErrors()
     {
         $command = $this->application->find('parser:command');
@@ -102,8 +88,6 @@ class ParserCommandTest extends KernelTestCase
     }
 
     /**
-     * throw exception of incorrect format data from file
-     *
      * @expectedException \Exception
      */
     public function testInvalidFormatData()
@@ -118,9 +102,6 @@ class ParserCommandTest extends KernelTestCase
         ]);
     }
 
-    /**
-     * application settings
-     */
     public function setUp()
     {
         $kernel = $this->createKernel();

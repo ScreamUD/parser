@@ -5,6 +5,7 @@ namespace ParserBundle\Service;
 use ParserBundle\Factory\ParserFactoryInterface;
 use Doctrine\ORM\EntityManager;
 use ParserBundle\Repository\ItemRepository;
+use Ddeboer\DataImport\Result;
 
 class ParserService
 {
@@ -30,18 +31,16 @@ class ParserService
     }
 
     /**
-     * Main method for parsing files
-     *
      * @param string $file
-     * @return bool|\Ddeboer\DataImport\Result
-     * @throws \Ddeboer\DataImport\Exception\ExceptionInterface
+     * @param bool $testOption
+     * @return Result
      * @throws \Exception
      */
-    public function parse($file)
+    public function parse($file, $testOption = false)
     {
         $format = $this->getFileExtension($file);
 
-        $workflow = $this->factory->getParser($file, $format);
+        $workflow = $this->factory->getParser($file, $format, $testOption);
 
         try {
             $result = $workflow->process();
@@ -53,8 +52,14 @@ class ParserService
     }
 
     /**
-     * fastest method to get file extension
-     *
+     * @return array
+     */
+    public function getParseErrors()
+    {
+        return $this->factory->getParseErrors();
+    }
+
+    /**
      * @param string $file
      * @return string
      */

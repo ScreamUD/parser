@@ -2,29 +2,35 @@
 
 namespace ParserBundle\Factory;
 
+use Ddeboer\DataImport\Filter\ValidatorFilter;
 use Ddeboer\DataImport\Reader\CsvReader;
-use Ddeboer\DataImport\Workflow;
-use Ddeboer\DataImport\Reader\ReaderInterface;
-use Ddeboer\DataImport\Filter\CallbackFilter;
+use Ddeboer\DataImport\Step\FilterStep;
+use Ddeboer\DataImport\Step\MappingStep;
+use Ddeboer\DataImport\Workflow\StepAggregator;
+use Ddeboer\DataImport\Reader;
 use Ddeboer\DataImport\Writer\DoctrineWriter;
+use ParserBundle\Entity\Item;
+use ParserBundle\Helper\ConstraintInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
-use Ddeboer\DataImport\ItemConverter\MappingItemConverter;
-use Ddeboer\DataImport\ItemConverter\ItemConverterInterface;
 use Psr\Log\LoggerInterface;
 use Doctrine\ORM\EntityManager;
+use Ddeboer\DataImport\Exception\WriterException;
 
 /**
  * Class ParserFactory
- * @package ParserBundle\Services\CsvParser
+ * @package ParserBundle\Factory
  */
 class ParserFactory implements ParserFactoryInterface
 {
+    const ITEM_MIN_COST = 5;
+    const ITEM_MIN_STOCK = 10;
+
     /**
      * filter for unique data
      *
      * @var array
      */
-    protected $filter = array();
+    protected $filter = [];
 
     /**
      * @var DoctrineWriter
@@ -37,7 +43,7 @@ class ParserFactory implements ParserFactoryInterface
     protected $validator;
 
     /**
-     * @var MappingItemConverter
+     * @var MappingStep
      */
     protected $converter;
 
@@ -52,30 +58,40 @@ class ParserFactory implements ParserFactoryInterface
     protected $em;
 
     /**
+     * @var Reader
+     */
+    protected $reader;
+
+    /**
      * @var \Doctrine\Common\EventManager
      */
     protected $evm;
+
+    protected $helper;
 
     /**
      * ParserFactory constructor.
      * @param DoctrineWriter $writer
      * @param ValidatorInterface $validator
-     * @param MappingItemConverter $converter
+     * @param MappingStep $converter
      * @param LoggerInterface $logger
      * @param EntityManager $em
+     * @param ConstraintInterface $helper
      */
     public function __construct(
         DoctrineWriter $writer,
         ValidatorInterface $validator,
-        MappingItemConverter $converter,
+        MappingStep $converter,
         LoggerInterface $logger,
-        EntityManager $em
+        EntityManager $em,
+        ConstraintInterface $helper
     )
     {
         $this->writer = $writer;
         $this->validator = $validator;
         $this->converter = $converter;
         $this->logger = $logger;
+        $this->helper = $helper;
         $this->em = $em;
         $this->evm = $em->getEventManager();
     }
@@ -85,16 +101,17 @@ class ParserFactory implements ParserFactoryInterface
      *
      * @param string $file
      * @param string $format
-     * @return Workflow
+     * @param bool $testOption
+     * @return StepAggregator
      * @throws \Exception
      */
-    public function getParser($file, $format)
+    public function getParser($file, $format, $testOption = false)
     {
         $instance = null;
 
         switch ($format) {
             case 'csv':
-                $instance = $this->csvParser($file);
+                $instance = $this->csvParser($file, $testOption);
                 break;
             default:
                 throw new \Exception('Format not found');
@@ -104,94 +121,144 @@ class ParserFactory implements ParserFactoryInterface
     }
 
     /**
-     * This method get CsvReader and makes
-     * Workflow via reader with prepared data to insertion
-     *
-     * @param string $file
-     * @return Workflow
-     * @throws \Exception
+     * @return array
      */
-    protected function csvParser($file)
+    public function getParseErrors()
     {
-        try {
-            $file = new \SplFileObject($file);
-            $reader = new CsvReader($file);
-            $reader->setHeaderRowNumber(0);
+        $result = [];
 
-            if ($reader->hasErrors()) {
-                $lines = array_keys($reader->getErrors());
-
-                $this->logger->error('Parse error on lines:', $lines);
-
-                for ($i = 0; $i < count($lines); $i++) {
-                    $this->evm->dispatchEvent('errorsCountEvent');
-                }
-            }
-
-            $workflow = $this->getWorkflow($reader);
-
-            return $workflow;
-        } catch (\Exception $e) {
-            throw new \Exception($e->getMessage());
+        if (method_exists($this->reader, 'hasErrors') && $this->reader->hasErrors()) {
+            $result = array_keys($this->reader->getErrors());
         }
+
+        return $result;
     }
 
     /**
      * Prepares Workflow with all filters, writers and converters
      *
-     * @param ReaderInterface $reader
-     * @return Workflow
+     * @param Reader $reader
+     * @param bool $testOption
+     * @return StepAggregator
      */
-    public function getWorkflow(ReaderInterface $reader)
+    public function getWorkflow(Reader $reader, $testOption = false)
     {
-        $workflow = new Workflow($reader);
+        $workflow = new StepAggregator($reader);
 
-        $this->writer->setBatchSize(count($reader));
         $this->writer->disableTruncate();
-        $workflow->addFilter($this->getCallbackUniqueFilter());
-        $workflow->addItemConverter($this->getConverter());
-        $workflow->addWriter($this->writer);
+        $workflow->setSkipItemOnFailure(true);
+        $workflow->addStep($this->getConverter(), 100);
+
+        $filterStep = new FilterStep();
+        $filterStep->add($this->getCallbackUniqueFilter(), 100);
+        $filterStep->add($this->getCallbackConditionsFilter(), 90);
+        $filterStep->add($this->getValidationFilter(), 80);
+
+        $workflow->addStep($filterStep, 90);
+
+        if (!$testOption) {
+            $workflow->addWriter($this->writer);
+        }
 
         return $workflow;
     }
 
     /**
-     * filter to check duplicate 'Product Code' fields
+     * converts default headers from file to database field names
      *
-     * @return CallbackFilter
+     * @return MappingStep
+     */
+    public function getConverter()
+    {
+        return $this->converter
+            ->map('[Product Code]', '[strProductCode]')
+            ->map('[Product Name]', '[strProductName]')
+            ->map('[Product Description]', '[strProductDesc]')
+            ->map('[Stock]', '[intStock]')
+            ->map('[Cost in GBP]', '[fltCost]')
+            ->map('[Discontinued]', '[dtmDiscontinued]');
+    }
+
+    /**
+     * @return ValidatorFilter
+     */
+    protected function getValidationFilter()
+    {
+        $validatorFilter = new ValidatorFilter($this->validator);
+
+        $arrayOfConstraints = $this->helper->getConstraint(new Item());
+        foreach ($arrayOfConstraints as $value) {
+            $validatorFilter->add($value['field'], $value['constraint']);
+        }
+
+        $validatorFilter->throwExceptions();
+        $validatorFilter->setStrict(false);
+
+        return $validatorFilter;
+    }
+
+    /**
+     * @return callable
      */
     protected function getCallbackUniqueFilter()
     {
-        $callbackFilter = new CallbackFilter(function ($data)
+        $callbackFilter = function ($data)
         {
-            if (isset($this->filter[$data['Product Code']])) {
-                $this->logger->alert('Duplication product code ' . $data['Product Code']);
-                $this->evm->dispatchEvent('errorsCountEvent');
-                $result = false;
+            if(!isset($data['strProductCode'])) {
+                throw new \Exception('Data is invalid');
+            }
+
+            if (isset($this->filter[$data['strProductCode']])) {
+                $message = sprintf('Duplication product code - %s', $data['strProductCode']);
+                throw new WriterException($message);
             } else {
-                $this->filter[$data['Product Code']] = true;
+                $this->filter[$data['strProductCode']] = true;
                 $result = true;
             }
 
             return $result;
-        });
+        };
 
         return $callbackFilter;
     }
 
     /**
-     * method for convert default headers from file to database field names
-     *
-     * @return ItemConverterInterface
+     * @return callable
      */
-    public function getConverter()
+    protected function getCallbackConditionsFilter()
     {
-        return $this->converter
-            ->addMapping('Product Code', 'strProductCode')
-            ->addMapping('Product Name', 'strProductName')
-            ->addMapping('Product Description', 'strProductDesc')
-            ->addMapping('Stock', 'intStock')
-            ->addMapping('Cost in GBP', 'fltCost')
-            ->addMapping('Discontinued', 'dtmDiscontinued');
+        $callbackFilter = function ($data)
+        {
+            if ($data['fltCost'] < self::ITEM_MIN_COST && $data['intStock'] < self::ITEM_MIN_STOCK) {
+                $message = sprintf('Item cost less than 5 and product stock less than 10 - %s', $data['strProductCode']);
+                throw new WriterException($message);
+            } else {
+                $this->filter[$data['strProductCode']] = true;
+                $result = true;
+            }
+
+            return $result;
+        };
+
+        return $callbackFilter;
+    }
+
+    /**
+     * @param string $file
+     * @param bool $testOption
+     * @return StepAggregator
+     * @throws \Exception
+     */
+    protected function csvParser($file, $testOption = false)
+    {
+        try {
+            $file = new \SplFileObject($file);
+            $this->reader = new CsvReader($file);
+            $this->reader->setHeaderRowNumber(0);
+            $workflow = $this->getWorkflow($this->reader, $testOption);
+            return $workflow;
+        } catch (\Exception $e) {
+            throw new \Exception($e->getMessage());
+        }
     }
 }

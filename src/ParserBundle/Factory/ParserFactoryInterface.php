@@ -2,8 +2,12 @@
 
 namespace ParserBundle\Factory;
 
-use Ddeboer\DataImport\Workflow;
+use Ddeboer\DataImport\Workflow\StepAggregator;
 
+/**
+ * Interface ParserFactoryInterface
+ * @package ParserBundle\Factory
+ */
 interface ParserFactoryInterface
 {
     /**
@@ -11,8 +15,13 @@ interface ParserFactoryInterface
      *
      * @param string $file
      * @param string $format
-     * @return Workflow
-     * @throws \Exception
+     * @param bool $testOption
+     * @return StepAggregator
      */
-    public function getParser($file, $format);
+    public function getParser($file, $format, $testOption);
+
+    /**
+     * @return array
+     */
+    public function getParseErrors();
 }
