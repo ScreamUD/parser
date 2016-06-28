@@ -11,7 +11,7 @@ services:
         arguments: ['@doctrine.orm.default_entity_manager', '%entity%']
     factory.parser_factory:
         class: ParserBundle\Factory\ParserFactory
-        arguments: ['@doctrine.writer', '@validator', '@mapping.converter', '@logger', '@doctrine.orm.default_entity_manager', '@constraint.helper']
+        arguments: ['@doctrine.writer', '@validator', '@mapping.converter', '@constraint.helper']
     service.parser_service:
         class: ParserBundle\Service\ParserService
         arguments: ['@factory.parser_factory', '@doctrine.orm.default_entity_manager']

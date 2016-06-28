@@ -33,19 +33,27 @@ class ParserFactory
     protected $helper;
 
     /**
+     * @var MappingStep
+     */
+    protected $converter;
+
+    /**
      * ParserFactory constructor.
      * @param DoctrineWriter $writer
      * @param ValidatorInterface $validator
+     * @param MappingStep $converter
      * @param ConstraintInterface $helper
      */
     public function __construct(
         DoctrineWriter $writer,
         ValidatorInterface $validator,
+        MappingStep $converter,
         ConstraintInterface $helper
     )
     {
         $this->writer = $writer;
         $this->validator = $validator;
+        $this->converter = $converter;
         $this->helper = $helper;
     }
 
