@@ -18,7 +18,7 @@ use Doctrine\ORM\EntityManager;
 class ParserFactory
 {
     const TYPE_CSV = 'csv';
-    
+
     /**
      * @var DoctrineWriter
      */
